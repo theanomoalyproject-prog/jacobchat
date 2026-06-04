@@ -1309,22 +1309,30 @@ document.addEventListener("drop", e => {
 });
 
 // ── CLEAR ────────────────────────────────────────────
-window.clearAllMessages = async function() {
-  if (!confirm("Clear all messages? This cannot be undone.")) return;
+onChildAdded(messagesRef, snap => {
+  const msg = snap.val();
 
-  const t = time();
+  // auto-delete the clear notice so it never persists after refresh
+  if (msg.system && msg.ephemeral === "clear_notice") {
+    remove(snap.ref);
+    systemMessage(msg.text);
+    return;
+  }
 
-  await remove(messagesRef);
+  if (msg.system) {
+    systemMessage(msg.text);
+    return;
+  }
 
-  await push(messagesRef, {
-    system: true,
-    text: `CHAT HISTORY CLEARED — The conversation has been cleared by ${username}. Please refresh your page to ensure your chat view is fully synchronized.`,
-    clock: t.clock,
-    timestamp: t.timestamp
-  });
-
-  closeSettings();
-};
+  createMessage(
+    msg.name,
+    msg.text,
+    msg.clock,
+    msg.image || null,
+    msg.userColor,
+    msg.userId
+  );
+});
 
 // ── IMAGE VIEWER ──────────────────────────────────────
 window.openImgViewer = function(src) {
