@@ -1309,17 +1309,20 @@ document.addEventListener("drop", e => {
 });
 
 // ── CLEAR ────────────────────────────────────────────
-window.clearAllMessages = function() {
+window.clearAllMessages = async function() {
   if (!confirm("Clear all messages? This cannot be undone.")) return;
-  remove(messagesRef);
-  wrap.innerHTML = "";
-  wrap.appendChild(emptyState);
-  emptyState.style.display = "flex";
-  lastSenderUserId = null;
-  lastDayLabel = null;
-  messageCount = 0;
-  sharedMedia = [];
-  refreshMediaGrid();
+
+  const t = time();
+
+  await remove(messagesRef);
+
+  await push(messagesRef, {
+    system: true,
+    text: `CHAT HISTORY CLEARED — The conversation has been cleared by ${username}. Please refresh your page to ensure your chat view is fully synchronized.`,
+    clock: t.clock,
+    timestamp: t.timestamp
+  });
+
   closeSettings();
 };
 
@@ -1438,7 +1441,20 @@ document.getElementById("search-input").addEventListener("input", e => {
 // ── FIREBASE LISTENER ────────────────────────────────
 onChildAdded(messagesRef, snap => {
   const msg = snap.val();
-  createMessage(msg.name, msg.text, msg.clock, msg.image || null, msg.userColor, msg.userId);
+
+  if (msg.system) {
+    systemMessage(msg.text);
+    return;
+  }
+
+  createMessage(
+    msg.name,
+    msg.text,
+    msg.clock,
+    msg.image || null,
+    msg.userColor,
+    msg.userId
+  );
 });
 </script>
 </body>
