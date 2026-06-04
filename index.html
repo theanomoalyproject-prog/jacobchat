@@ -1312,13 +1312,6 @@ document.addEventListener("drop", e => {
 onChildAdded(messagesRef, snap => {
   const msg = snap.val();
 
-  // auto-delete the clear notice so it never persists after refresh
-  if (msg.system && msg.ephemeral === "clear_notice") {
-    remove(snap.ref);
-    systemMessage(msg.text);
-    return;
-  }
-
   if (msg.system) {
     systemMessage(msg.text);
     return;
@@ -1464,6 +1457,29 @@ onChildAdded(messagesRef, snap => {
     msg.userId
   );
 });
+// WINDOW.SENDMESSAGE
+  window.clearAllMessages = async function () {
+  if (!confirm("Clear all messages? This cannot be undone.")) return;
+
+  const t = time();
+
+  await remove(messagesRef);
+
+  systemMessage(
+    `CHAT HISTORY CLEARED — The conversation has been cleared by ${username}. Please refresh your page to ensure your chat view is fully synchronized.`
+  );
+
+  wrap.innerHTML = "";
+  wrap.appendChild(emptyState);
+  emptyState.style.display = "flex";
+  lastSenderUserId = null;
+  lastDayLabel = null;
+  messageCount = 0;
+  sharedMedia = [];
+  refreshMediaGrid();
+
+  closeSettings();
+};
 </script>
 </body>
 </html>
